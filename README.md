@@ -17,42 +17,29 @@ This version focuses on whale‑first detection, optimized EDGAR parsing, and a 
 Stops new entries during bear regimes.
 
 - EDGAR Form 4 scanning
+- 
 Atom feed (Tier 1)
-
 EFTS search (Tier 2)
-
 XML parsing
-
 Officer‑only filtering
-
 Purchase‑only filtering
-
 Whale detection
-
 Flags large insider buys (high conviction).
 
 - Fundamental filters
-
+- 
 PEG, D/E, margins, growth, insider ownership.
 
 - Clean ticker universe
-  
+- 
 Removes:
-
 Warrants (W)
-
 Units (U)
-
 Rights (R)
-
 SPACs
-
 OTC shells
-
 Tickers > 5 characters
-
 Tickers with numbers
-
 ## Installation
 
 1. Clone the repository
