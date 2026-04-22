@@ -1,156 +1,100 @@
-Leviathan v7 — Insider Momentum Stock Scanner
+Leviathan v8 — Whale‑First Insider Scanner
+A Python‑based insider‑buying scanner that pulls Form 4 filings from SEC EDGAR, filters for high‑conviction signals, applies fundamental + sector filters, and generates daily reports.
 
-A clean, beginner‑friendly README for anyone using this project for the first time.
+This version focuses on whale‑first detection, optimized EDGAR parsing, and a clean ticker universe.
 
-📌 Overview
+📦 Installation
+1. Clone the repository
+bash
+git clone https://github.com/Lugnutzzz/Leviathan
+cd Leviathan
+2. Install dependencies
+Make sure Python 3.10+ is installed, then run:
 
-Leviathan v7 is a Python‑based stock‑selection engine that identifies high‑conviction opportunities using:
+bash
+pip install -r requirements.txt
+3. Configure SEC EDGAR email
+Inside leviathan_v8.py, set your email:
 
-Insider Form 4 purchases (SEC EDGAR)
+python
+EDGAR_EMAIL = "your_email_here"
+The SEC requires this for identification.
+This does not affect scanning speed or functionality.
 
-Fundamental filters (PEG, D/E, margins, growth)
+🚀 Running the Scanner
+From inside the repo folder:
 
-Sector momentum (sector ETF vs SPY)
+bash
+python leviathan_v8.py
+You will see output like:
 
-Market regime detection (SPY 200‑day MA)
+Code
+PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER
+SPY 200-day MA check...
+Scanning EDGAR Form 4 filings...
+Parsing XML...
+Filtering for officer buys...
+The first run may take 3–6 hours depending on EDGAR rate limits.
+Subsequent runs are faster because cached data is reused.
 
-A clean, pre‑filtered ticker universe
+📄 Output Files
+All reports are saved in the same folder as the script, not in .log or /data.
 
-The system generates daily reports and includes a full historical backtest engine.
+Look for files like:
+
+Code
+leviathan_report_2026-04-21.txt
+These contain:
+
+Whale buys (officer Form 4 purchases)
+
+Track A / Track B candidates
+
+Rejection reasons
+
+Sector momentum
+
+SPY 200‑day MA status
+
+Watchlist updates
 
 📁 Project Structure
-
+Code
 Leviathan/
 │
-├── leviathan_v7.py                 # Main daily scanner
-├── leviathan_watchlist.json        # Persistent memory across scans
-├── leviathan_report_*.txt          # Auto‑generated daily reports
+├── leviathan_v8.py                 # Main scanner
+├── leviathan_watchlist.json        # Persistent memory
+├── leviathan_report_*.txt          # Daily reports
 │
-├── data/
-│   └── edgar_fundamentals.py       # SEC XBRL fundamentals loader
-│
-├── universe/
-│   └── universe_builder.py         # Clean ticker universe generator
-│
-├── backtest/
-│   ├── engine.py                   # Event‑driven backtest engine
-│   ├── run_backtest.py             # Main backtest runner
-│   ├── additional_factors.py       # Optional extra factors
-│   └── parameter_sensitivity.py    # Robustness testing
-│
-└── README.md
+├── data/                           # (Optional) fundamentals
+├── universe/                       # (Optional) universe builder
+└── backtest/                       # (Optional) backtest engine
+Note:  
+The backtest engine is optional.
+You do NOT need to download it to run the scanner.
 
-🛠 Installation
+🧠 What the Scanner Does
+1. SPY 200‑day MA check
+Stops new entries during bear regimes.
 
-1. Install Python
+2. EDGAR Form 4 scanning
+Atom feed (Tier 1)
 
-Download Python 3.10+ from: https://www.python.org/downloads/
+EFTS search (Tier 2)
 
-During installation, check:
+XML parsing
 
-Add Python to PATH
+Officer‑only filtering
 
-2. Install dependencies
+Purchase‑only filtering
 
-Open Command Prompt and run:
+3. Whale detection
+Flags large insider buys (high conviction).
 
-pip install yfinance requests pandas numpy scipy
+4. Fundamental filters
+PEG, D/E, margins, growth, insider ownership.
 
-📦 Setup
-
-1. Create project folders
-
-C:\Leviathan\
-C:\leviathan_bt\
-
-Place the files into the structure shown above.
-
-2. Configure EDGAR email
-
-Inside leviathan_v7.py, set:
-
-EDGAR_EMAIL = "your_email_here"
-
-This is required by the SEC for API identification.
-
-🚀 Running the Daily Scanner
-
-From Command Prompt:
-
-cd C:\Leviathan
-python leviathan_v7.py
-
-The scanner will:
-
-Check SPY’s 200‑day MA
-
-Identify outperforming sectors
-
-Pull recent Form 4 insider purchases
-
-Apply all filters
-
-Score each stock
-
-Generate a report like:
-
-leviathan_report_2026-04-21.txt
-
-📈 Running the Backtest Engine
-
-First run (downloads EDGAR data):
-
-cd C:\leviathan_bt
-python backtest/run_backtest.py
-
-First run: 3–6 hours
-
-Later runs: 20–40 minutes
-
-The backtest includes:
-
-Point‑in‑time fundamentals
-
-Form 4 filing‑date alignment
-
-Survivorship‑bias reduction
-
-Realistic trading costs
-
-Volume limits
-
-Multi‑track testing
-
-🔍 What the Scanner Looks For
-
-Fundamentals
-
-PEG < 0.5
-
-D/E < 0.6
-
-Gross margin > 60%
-
-Revenue growth > 15%
-
-Insider ownership > 20%
-
-Insider Activity
-
-Officer (CEO/CFO/COO)
-
-Open‑market purchase
-
-Large dollar value
-
-Market Context
-
-Sector ETF outperforming SPY (90 days)
-
-SPY above 200‑day MA
-
-Universe Filters
-
+5. Clean ticker universe
 Removes:
 
 Warrants (W)
@@ -159,34 +103,27 @@ Units (U)
 
 Rights (R)
 
+SPACs
+
+OTC shells
+
 Tickers > 5 characters
 
 Tickers with numbers
 
-SPACs / shells
+⚠ Notes
+Long runtime (4–6 hours) is normal due to SEC rate limits.
 
-📄 Daily Workflow
+Changing the EDGAR email does not break anything.
 
-Run the scanner
+Backtest folder is optional and not required for scanning.
 
-Open the generated report
-
-Review Track A / Track B candidates
-
-Verify insider Form 4 filings (links provided)
-
-Apply your own judgment or position sizing
-
-Manage exits (stop‑loss, take‑profit, max hold)
-
-⚠ Disclaimer
-
-This project is for research and educational purposes only. It does not provide financial advice.
+Reports always save as .txt in the main folder.
 
 🤝 Contributing
-
-Pull requests are welcome. For major changes, open an issue first to discuss what you’d like to modify.
+Pull requests welcome.
+Open an issue for major changes.
 
 📬 Contact
-
-For questions or collaboration: your_email_here
+For questions or improvements:
+@lugnutz__ on discord
