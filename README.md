@@ -13,33 +13,50 @@ This version focuses on whale‑first detection, optimized EDGAR parsing, and a 
 ## Features
 
 - SPY 200‑day MA check
+- 
 Stops new entries during bear regimes.
 
 - EDGAR Form 4 scanning
 Atom feed (Tier 1)
+
 EFTS search (Tier 2)
+
 XML parsing
+
 Officer‑only filtering
+
 Purchase‑only filtering
+
 Whale detection
+
 Flags large insider buys (high conviction).
 
 - Fundamental filters
+
 PEG, D/E, margins, growth, insider ownership.
 
 - Clean ticker universe
+  
 Removes:
+
 Warrants (W)
+
 Units (U)
+
 Rights (R)
+
 SPACs
+
 OTC shells
+
 Tickers > 5 characters
+
 Tickers with numbers
 
 ## Installation
 
 1. Clone the repository
+
 
 ```bash
 git clone https://github.com/Lugnutzzz/Leviathan
@@ -47,10 +64,12 @@ cd Leviathan
 ```
 2. Install dependencies
 
+
 ```bash
 pip install -r requirements.txt
 ```
 3. Configure SEC EDGAR email
+
 
 Inside leviathan_v8.py, set your email:
 
@@ -71,11 +90,17 @@ You will see output such as:
 
 Code
 PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER
+
 SPY 200-day MA check...
+
 Scanning EDGAR Form 4 filings...
+
 Parsing XML...
+
 Filtering for officer buys...
+
 The first run may take 3–6 hours depending on EDGAR rate limits.
+
 Subsequent runs are faster because cached data is reused.
 
 Output Files
@@ -85,6 +110,7 @@ Look for files like:
 
 Code
 leviathan_report_2026-04-21.txt
+
 These contain:
 
 Whale buys (officer Form 4 purchases)
