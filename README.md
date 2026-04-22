@@ -39,7 +39,7 @@ Rights (R),
 SPACs, 
 OTC shells, 
 Tickers > 5 characters, 
-Tickers with numbers, 
+Tickers with numbers.
 ## Installation
 
 1. Clone the repository
@@ -98,7 +98,7 @@ Track A / Track B candidates,
 Rejection reasons, 
 Sector momentum, 
 SPY 200‑day MA status, 
-Watchlist updates, 
+Watchlist updates. 
 
 ## Contributing
 
