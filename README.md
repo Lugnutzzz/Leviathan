@@ -77,39 +77,27 @@ You will see output such as:
 
 Code
 PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER
-
 SPY 200-day MA check...
-
 Scanning EDGAR Form 4 filings...
-
 Parsing XML...
-
 Filtering for officer buys...
 
-The first run may take 3–6 hours depending on EDGAR rate limits.
+The first run may take a while depending on EDGAR rate limits.
 
 Subsequent runs are faster because cached data is reused.
 
 Output Files
 All reports are saved in the same folder as the script, not in .log or /data.
-
 Look for files like:
 
-Code
 leviathan_report_2026-04-21.txt
 
 These contain:
-
 Whale buys (officer Form 4 purchases)
-
 Track A / Track B candidates
-
 Rejection reasons
-
 Sector momentum
-
 SPY 200‑day MA status
-
 Watchlist updates
 
 ## Contributing
