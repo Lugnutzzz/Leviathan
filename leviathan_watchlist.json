@@ -1,0 +1,58 @@
+{
+  "CET": {
+    "first_seen": "2026-04-03",
+    "last_seen": "2026-04-21",
+    "name": "11017",
+    "days_on_list": 9,
+    "last_peg": 0.119,
+    "peg_history": [
+      0.113,
+      0.118,
+      0.12,
+      0.119
+    ],
+    "track": "B"
+  },
+  "OPY": {
+    "first_seen": "2026-04-03",
+    "last_seen": "2026-04-14",
+    "name": "Oppenheimer Holdings, Inc.",
+    "days_on_list": 2,
+    "last_peg": 0.305,
+    "peg_history": [
+      0.305
+    ]
+  },
+  "TIGR": {
+    "first_seen": "2026-04-03",
+    "last_seen": "2026-04-21",
+    "name": "UP Fintech Holding Limited",
+    "days_on_list": 4,
+    "last_peg": 0.162,
+    "peg_history": [
+      0.147,
+      0.165,
+      0.162
+    ],
+    "track": "B"
+  },
+  "TREE": {
+    "first_seen": "2026-04-14",
+    "last_seen": "2026-04-16",
+    "name": "LendingTree, Inc.",
+    "days_on_list": 2,
+    "last_peg": 0.19,
+    "peg_history": [
+      0.19
+    ]
+  },
+  "DAC": {
+    "first_seen": "2026-04-21",
+    "last_seen": "2026-04-21",
+    "name": "Danaos Corporation",
+    "days_on_list": 1,
+    "last_peg": 0.12,
+    "peg_history": [],
+    "track": "B"
+  }
+}
