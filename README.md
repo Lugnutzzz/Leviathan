@@ -78,7 +78,7 @@ Filtering for officer buys...
 The first run may take 3–6 hours depending on EDGAR rate limits.
 Subsequent runs are faster because cached data is reused.
 
-📄 Output Files
+Output Files
 All reports are saved in the same folder as the script, not in .log or /data.
 
 Look for files like:
