@@ -18,12 +18,12 @@ Stops new entries during bear regimes.
 
 - EDGAR Form 4 scanning
   
-Atom feed (Tier 1)
-EFTS search (Tier 2)
-XML parsing
-Officer‑only filtering
-Purchase‑only filtering
-Whale detection
+Atom feed (Tier 1), 
+EFTS search (Tier 2), 
+XML parsing, 
+Officer‑only filtering, 
+Purchase‑only filtering, 
+Whale detection, 
 Flags large insider buys (high conviction).
 
 - Fundamental filters
@@ -33,13 +33,13 @@ PEG, D/E, margins, growth, insider ownership.
 - Clean ticker universe
   
 Removes:
-Warrants (W)
-Units (U)
-Rights (R)
-SPACs
-OTC shells
-Tickers > 5 characters
-Tickers with numbers
+Warrants (W), 
+Units (U), 
+Rights (R), 
+SPACs, 
+OTC shells, 
+Tickers > 5 characters, 
+Tickers with numbers, 
 ## Installation
 
 1. Clone the repository
@@ -93,12 +93,12 @@ Look for files like:
 leviathan_report_2026-04-21.txt
 
 These contain:
-Whale buys (officer Form 4 purchases)
-Track A / Track B candidates
-Rejection reasons
-Sector momentum
-SPY 200‑day MA status
-Watchlist updates
+Whale buys (officer Form 4 purchases), 
+Track A / Track B candidates, 
+Rejection reasons, 
+Sector momentum, 
+SPY 200‑day MA status, 
+Watchlist updates, 
 
 ## Contributing
 
