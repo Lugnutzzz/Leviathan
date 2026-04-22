@@ -5,29 +5,109 @@
 
 ## Description
 
-A brief description of your project goes here.
+Leviathan v8 — Whale‑First Insider Scanner
+A Python‑based insider‑buying scanner that pulls Form 4 filings from SEC EDGAR, filters for high‑conviction signals, applies fundamental + sector filters, and generates daily reports.
+
+This version focuses on whale‑first detection, optimized EDGAR parsing, and a clean ticker universe.
 
 ## Features
 
-- List of features in your project
-- Another feature
-- Yet another feature
+- SPY 200‑day MA check
+Stops new entries during bear regimes.
+
+- EDGAR Form 4 scanning
+Atom feed (Tier 1)
+EFTS search (Tier 2)
+XML parsing
+Officer‑only filtering
+Purchase‑only filtering
+Whale detection
+Flags large insider buys (high conviction).
+
+- Fundamental filters
+PEG, D/E, margins, growth, insider ownership.
+
+- Clean ticker universe
+Removes:
+Warrants (W)
+Units (U)
+Rights (R)
+SPACs
+OTC shells
+Tickers > 5 characters
+Tickers with numbers
 
 ## Installation
 
-Instructions for installing your project.
+1. Clone the repository
 
 ```bash
-# Installation command here
+git clone https://github.com/Lugnutzzz/Leviathan
+cd Leviathan
 ```
+2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+3. Configure SEC EDGAR email
+
+Inside leviathan_v8.py, set your email:
+
+```python
+EDGAR_EMAIL = "your_email_here"
+```
+The SEC requires this for identification.
+This does not affect scanning speed or functionality.
 
 ## Usage
 
-Instructions for using your project.
+From inside the repo folder:
+
+```bash
+python leviathan_v8.py
+```
+You will see output such as:
+
+Code
+PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER
+SPY 200-day MA check...
+Scanning EDGAR Form 4 filings...
+Parsing XML...
+Filtering for officer buys...
+The first run may take 3–6 hours depending on EDGAR rate limits.
+Subsequent runs are faster because cached data is reused.
+
+📄 Output Files
+All reports are saved in the same folder as the script, not in .log or /data.
+
+Look for files like:
+
+Code
+leviathan_report_2026-04-21.txt
+These contain:
+
+Whale buys (officer Form 4 purchases)
+
+Track A / Track B candidates
+
+Rejection reasons
+
+Sector momentum
+
+SPY 200‑day MA status
+
+Watchlist updates
 
 ## Contributing
 
-Guidelines for contributing to the project.
+Pull requests welcome.
+Open an issue for major changes.
+
+## Contact
+
+For questions or improvements:
+@lugnutz__ on discord
 
 ## License
 
