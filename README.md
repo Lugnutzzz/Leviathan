@@ -102,11 +102,13 @@ Watchlist updates
 ## Contributing
 
 Pull requests welcome.
+
 Open an issue for major changes.
 
 ## Contact
 
 For questions or improvements:
+
 @lugnutz__ on discord
 
 ## License
