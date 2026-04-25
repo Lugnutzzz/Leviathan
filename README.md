@@ -10,6 +10,8 @@ Leviathan v8 — Whale‑First Insider Scanner
 A Python‑based insider‑buying scanner that pulls Form 4 filings from SEC EDGAR, filters for high‑conviction signals, applies fundamental + sector filters, and generates daily reports.
 
 This version focuses on whale‑first detection, optimized EDGAR parsing, and a clean ticker universe.
+<img width="1910" height="1003" alt="image" src="https://github.com/user-attachments/assets/d484dfa3-3587-4882-ac3a-0e75c3a9f04f" />
+
 
 ## Features
 
