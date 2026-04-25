@@ -1,4 +1,4 @@
-# Project Title
+# Leviathan
 
 ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
