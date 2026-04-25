@@ -61,10 +61,11 @@ import requests
 #  CONFIGURATION
 # ══════════════════════════════════════════════════════════════
 
-SEC_EMAIL  = "your_email_here"
+SEC_EMAIL  = ""
 USER_AGENT = f"LeviathanScout/8.0 {SEC_EMAIL}"
 
 _DIR           = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(_DIR, "leviathan_config.json")
 WATCHLIST_FILE = os.path.join(_DIR, "leviathan_watchlist.json")
 
 # ── Whale thresholds ────────────────────────────────────────
@@ -110,10 +111,10 @@ BACKOFF_MAX  = 120.0
 SEC_DELAY    = 0.12   # 10 req/sec SEC limit
 
 # ── Email ─────────────────────────────────────────────────────
-EMAIL_ENABLED  = False
-EMAIL_FROM     = "your_email_here"
-EMAIL_TO       = "your_email_here"
-EMAIL_APP_PASS = ""
+#EMAIL_ENABLED  = False
+#EMAIL_FROM     = ""
+#EMAIL_TO       = ""
+#EMAIL_APP_PASS = ""
 
 # ══════════════════════════════════════════════════════════════
 #  LOGGING
@@ -130,6 +131,57 @@ logging.basicConfig(
 )
 log = logging.getLogger("leviathan")
 
+# email stuff, dont mind
+def load_config() -> dict:
+    """Load persisted config, prompting for missing values on first run."""
+    cfg = {}
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            cfg = json.load(f)
+
+    def is_valid_email(e: str) -> bool:
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", e):
+            return False
+        try:
+            import dns.resolver # type: ignore
+            domain = e.split("@")[1]
+            dns.resolver.resolve(domain, "MX")
+            return True
+        except Exception:
+            return False
+
+    # Prompt for SEC contact email if missing
+    if not cfg.get("sec_email"):
+        print("\n  SEC requires a contact email in the User-Agent header.")
+        while True:
+            val = input("  Enter your email for SEC User-Agent: ").strip()
+            if is_valid_email(val):
+                cfg["sec_email"] = val
+                break
+            print("  Invalid email, try again.")
+
+    # Prompt for report email if missing
+    if not cfg.get("report_email"):
+        ans = input("\n  Send scan reports by email? (y/n): ").strip().lower()
+        if ans == "y":
+            while True:
+                val = input("  Email address to send reports to: ").strip()
+                if is_valid_email(val):
+                    cfg["report_email"] = val
+                    break
+                print("  Invalid email, try again.")
+            app_pass = input("  Gmail App Password (leave blank to skip): ").strip()
+            cfg["report_app_pass"] = app_pass
+            cfg["email_enabled"] = bool(app_pass)
+        else:
+            cfg["report_email"] = ""
+            cfg["report_app_pass"] = ""
+            cfg["email_enabled"] = False
+
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(cfg, f, indent=2)
+
+    return cfg
 # ══════════════════════════════════════════════════════════════
 #  DATA STRUCTURE
 # ══════════════════════════════════════════════════════════════
@@ -2150,6 +2202,17 @@ def main():
     print(f"║   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("║   EDGAR atom feed → XML parse → quality filter")
     print("╚" + "═"*64 + "╝\n")
+
+    #email test
+    global SEC_EMAIL, USER_AGENT, EMAIL_ENABLED, EMAIL_FROM, EMAIL_TO, EMAIL_APP_PASS
+
+    cfg = load_config()
+    SEC_EMAIL     = cfg["sec_email"]
+    USER_AGENT    = f"LeviathanScout/8.0 {SEC_EMAIL}"
+    EMAIL_FROM    = cfg["sec_email"]          # send from same address
+    EMAIL_TO      = cfg.get("report_email", "")
+    EMAIL_APP_PASS = cfg.get("report_app_pass", "")
+    EMAIL_ENABLED  = cfg.get("email_enabled", False)
 
     watchlist = load_watchlist()
     watchlist = clean_watchlist(watchlist)
