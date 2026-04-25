@@ -85,17 +85,21 @@ def parse_xml(content: str):
 
 def parse_html(content: str):
     if BS4_AVAILABLE:
+        from bs4 import XMLParsedAsHTMLWarning
+        import warnings
+        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
         return BeautifulSoup(content, "lxml" if LXML_AVAILABLE else "html.parser")
     return content
 
 def progress(iterable, desc=""):
     if TQDM_AVAILABLE:
-        return tqdm(iterable, desc=desc)
+        return tqdm(iterable, desc=desc, position=1, leave=False,
+                    ncols=TQDM_COLS, dynamic_ncols=False)
     return iterable
 # ══════════════════════════════════════════════════════════════
 #  CONFIGURATION
 # ══════════════════════════════════════════════════════════════
-
+TQDM_COLS = 80
 SEC_EMAIL  = ""
 USER_AGENT = f"LeviathanScout/8.0 {SEC_EMAIL}"
 
@@ -155,13 +159,24 @@ SEC_DELAY    = 0.12   # 10 req/sec SEC limit
 #  LOGGING
 # ══════════════════════════════════════════════════════════════
 
+class TqdmLoggingHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if TQDM_AVAILABLE:
+                tqdm.write(msg)
+            else:
+                print(msg)
+        except Exception:
+            self.handleError(record)
+
 LOG_FILE = os.path.join(_DIR, f"leviathan_{datetime.now().strftime('%Y-%m-%d')}.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)
+        TqdmLoggingHandler(),
     ]
 )
 log = logging.getLogger("leviathan")
@@ -2272,7 +2287,9 @@ def main():
         watchlist = clean_watchlist(watchlist)
         log.info(f"Watchlist loaded: {len(watchlist)} stocks (after cleanup)")
 
-        overall = tqdm(total=6, desc="Overall progress", unit="step", position=0, leave=True) if TQDM_AVAILABLE else None
+        overall = tqdm(total=6, desc="Overall progress", unit="step", position=0,
+                    leave=True, ncols=80, dynamic_ncols=False) if TQDM_AVAILABLE else None
+
         def step_done(label=""):
             if overall:
                 if label:
