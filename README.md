@@ -57,12 +57,8 @@ pip install -r requirements.txt
 ```
 3. Configure SEC EDGAR email
 
+You will be prompted to enter a valid email. 
 
-Inside leviathan_v8.py, set your email:
-
-```python
-EDGAR_EMAIL = "your_email_here"
-```
 The SEC requires this for identification.
 This does not affect scanning speed or functionality.
 
