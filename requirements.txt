@@ -3,3 +3,6 @@ yfinance
 requests
 pandas
 dnspython
+lxml
+beautifulsoup4
+tqdm
