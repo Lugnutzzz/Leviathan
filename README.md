@@ -73,14 +73,6 @@ From inside the repo folder:
 ```bash
 python leviathan_v8.py
 ```
-You will see output such as:
-
-Code
-PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER
-SPY 200-day MA check...
-Scanning EDGAR Form 4 filings...
-Parsing XML...
-Filtering for officer buys...
 
 The first run may take a while depending on EDGAR rate limits.
 
