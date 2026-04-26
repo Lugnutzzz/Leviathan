@@ -1915,9 +1915,12 @@ def check_spy_200d_ma() -> tuple:
 #  WATCHLIST
 # ══════════════════════════════════════════════════════════════
 def ensure_watchlist():
+    d = os.path.dirname(WATCHLIST_FILE)
+    if d:
+        os.makedirs(d, exist_ok=True)
     if not os.path.exists(WATCHLIST_FILE):
-        with open(WATCHLIST_FILE, "w") as f:
-            json.dump({}, f)
+        with open(WATCHLIST_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=2)
         log.info(f"Watchlist file created at {WATCHLIST_FILE}")
     else:
         log.info(f"Watchlist file found at {WATCHLIST_FILE}")
