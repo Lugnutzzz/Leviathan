@@ -1,10 +1,10 @@
 """
-╔═══════════════════════════════════════════════════════════════════╗
-║        PROJECT LEVIATHAN v8.0 — FULL-KIT PRODUCTION SCANNER       ║
-║        Whale-First Architecture. Bulletproof EDGAR XML.           ║
-╠═══════════════════════════════════════════════════════════════════╣
+╔══════════════════════════════════════════════════════════════════╗
+║        PROJECT LEVIATHAN v8.0 — FULL-KIT PRODUCTION SCANNER     ║
+║        Whale-First Architecture. Bulletproof EDGAR XML.          ║
+╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
-║  WHAT'S NEW IN v8.0 vs v7.x:                                      ║
+║  WHAT'S NEW IN v8.0 vs v7.x:                                     ║
 ║                                                                   ║
 ║  ARCHITECTURE FLIP — WHALE-FIRST:                                 ║
 ║    Old: scan 8600 tickers with yfinance → check whale on survivors║
@@ -29,10 +29,10 @@
 ║                                                                   ║
 ║  LOOSENED FUNDAMENTALS FOR Track B-:                              ║
 ║    PEG: <1.0 (vs <0.5 tight)                                      ║
-║    Gross Margin: >25% any sector                                  ║
+║    Gross Margin: >25% any sector                                   ║
 ║    Revenue growth: >0% (profitable growth, any rate)              ║
 ║    Insider ownership: >8%                                         ║
-║    D/E: 2x normal limit                                           ║
+║    D/E: 2x normal limit                                            ║
 ║                                                                   ║
 ║  UNIVERSE CLEANUP:                                                ║
 ║    - Rejects tickers ending in F (OTC foreign)                    ║
@@ -43,7 +43,7 @@
 ║  SECTOR CATALYST TAGGING:                                         ║
 ║    Defense, AI infrastructure, domestic energy, reshoring,        ║
 ║    shipping supercycle — automatically tagged on every result     ║
-╚═══════════════════════════════════════════════════════════════════╝
+╚══════════════════════════════════════════════════════════════════╝
 """
 
 import os, sys, json, time, logging, re, smtplib, ssl
@@ -53,58 +53,18 @@ from typing import Optional, List
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-import numpy as np # type: ignore
-import yfinance as yf # type: ignore
+import numpy as np
+import yfinance as yf
 import requests
-# ── Optional fast libraries ──────────────────────────────────
-try:
-    from bs4 import BeautifulSoup
-    BS4_AVAILABLE = True
-except ImportError:
-    BS4_AVAILABLE = False
 
-try:
-    import lxml.etree as lxml_etree
-    LXML_AVAILABLE = True
-except ImportError:
-    LXML_AVAILABLE = False
-
-try:
-    from tqdm import tqdm
-    TQDM_AVAILABLE = True
-except ImportError:
-    TQDM_AVAILABLE = False
-
-# fast parsing and progress bars if available
-def parse_xml(content: str):
-    if LXML_AVAILABLE:
-        return lxml_etree.fromstring(content.encode())
-    else:
-        import xml.etree.ElementTree as ET
-        return ET.fromstring(content)
-
-def parse_html(content: str):
-    if BS4_AVAILABLE:
-        from bs4 import XMLParsedAsHTMLWarning
-        import warnings
-        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
-        return BeautifulSoup(content, "lxml" if LXML_AVAILABLE else "html.parser")
-    return content
-
-def progress(iterable, desc=""):
-    if TQDM_AVAILABLE:
-        return tqdm(iterable, desc=desc, position=1, leave=False,
-                    ncols=TQDM_COLS, dynamic_ncols=False)
-    return iterable
 # ══════════════════════════════════════════════════════════════
 #  CONFIGURATION
 # ══════════════════════════════════════════════════════════════
-TQDM_COLS = 80
-SEC_EMAIL  = ""
+
+SEC_EMAIL  = "marc58rplant@gmail.com"
 USER_AGENT = f"LeviathanScout/8.0 {SEC_EMAIL}"
 
 _DIR           = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(_DIR, "leviathan_config.json")
 WATCHLIST_FILE = os.path.join(_DIR, "leviathan_watchlist.json")
 
 # ── Whale thresholds ────────────────────────────────────────
@@ -150,25 +110,14 @@ BACKOFF_MAX  = 120.0
 SEC_DELAY    = 0.12   # 10 req/sec SEC limit
 
 # ── Email ─────────────────────────────────────────────────────
-#EMAIL_ENABLED  = False
-#EMAIL_FROM     = ""
-#EMAIL_TO       = ""
-#EMAIL_APP_PASS = ""
+EMAIL_ENABLED  = False
+EMAIL_FROM     = "marc58rplant@gmail.com"
+EMAIL_TO       = "marc58rplant@gmail.com"
+EMAIL_APP_PASS = ""
 
 # ══════════════════════════════════════════════════════════════
 #  LOGGING
 # ══════════════════════════════════════════════════════════════
-
-class TqdmLoggingHandler(logging.Handler):
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            if TQDM_AVAILABLE:
-                tqdm.write(msg)
-            else:
-                print(msg)
-        except Exception:
-            self.handleError(record)
 
 LOG_FILE = os.path.join(_DIR, f"leviathan_{datetime.now().strftime('%Y-%m-%d')}.log")
 logging.basicConfig(
@@ -176,43 +125,11 @@ logging.basicConfig(
     format="%(asctime)s  %(levelname)-8s  %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        TqdmLoggingHandler(),
+        logging.StreamHandler(sys.stdout)
     ]
 )
 log = logging.getLogger("leviathan")
 
-# email stuff, dont mind
-def load_config() -> dict:
-    """Load persisted config, prompting for missing values on first run."""
-    cfg = {}
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            cfg = json.load(f)
-
-    def is_valid_email(e: str) -> bool:
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", e):
-            return False
-        try:
-            import dns.resolver # type: ignore
-            domain = e.split("@")[1]
-            dns.resolver.resolve(domain, "MX")
-            return True
-        except Exception:
-            return False
-
-    if not cfg.get("sec_email"):
-        print("\n  SEC requires a contact email in the User-Agent header.")
-        while True:
-            val = input("  Enter your email for SEC User-Agent: ").strip()
-            if is_valid_email(val):
-                cfg["sec_email"] = val
-                break
-            print("  Invalid email, try again.")
-
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(cfg, f, indent=2)
-
-    return cfg
 # ══════════════════════════════════════════════════════════════
 #  DATA STRUCTURE
 # ══════════════════════════════════════════════════════════════
@@ -444,79 +361,7 @@ def parse_form4_xml(xml_text: str, current_price: float = 0.0) -> dict:
         "issuer_name":      "",
     }
 
-    if not xml_text:
-        return result
-
-    officer_keywords  = ["chief executive","ceo","co-ceo","chief financial","cfo",
-                         "chief operating","coo","president","chief","vp","vice president",
-                         "svp","evp","general counsel","principal","secretary","treasurer"]
-    director_keywords = ["director","trustee","board member"]
-
-    # ── lxml fast path ────────────────────────────────────────
-    if LXML_AVAILABLE:
-        try:
-            root = lxml_etree.fromstring(xml_text.encode())
-
-            def xt(tag):
-                el = root.find(".//" + tag)
-                return el.text.strip() if el is not None and el.text else ""
-
-            result["issuer_ticker"] = xt("issuerTradingSymbol").upper()
-            cik_raw = xt("issuerCik")
-            result["issuer_cik"]   = cik_raw.zfill(10) if cik_raw else ""
-            result["issuer_name"]  = xt("issuerName")
-
-            titles = [el.text.strip() for el in root.findall(".//officerTitle")
-                      if el.text and el.text.strip()]
-            result["raw_titles"]    = titles
-            best_title              = max(titles, key=len) if titles else ""
-            result["officer_title"] = best_title
-
-            tl = best_title.lower()
-            result["is_officer"]       = any(kw in tl for kw in officer_keywords)
-            result["is_director_only"] = (not result["is_officer"]) and any(kw in tl for kw in director_keywords)
-
-            total_dollars = 0.0
-            total_shares  = 0.0
-            price_sum     = 0.0
-            price_count   = 0
-
-            for block in root.findall(".//nonDerivativeTransaction"):
-                tc = block.find(".//transactionCode")
-                if tc is None or (tc.text or "").strip().upper() != "P":
-                    continue
-                ad = block.find(".//transactionAcquiredDisposedCode/value")
-                if ad is None or (ad.text or "").strip().upper() != "A":
-                    continue
-                sv = block.find(".//transactionShares/value")
-                pv = block.find(".//transactionPricePerShare/value")
-                if sv is None:
-                    continue
-                try:
-                    shares = float((sv.text or "0").replace(",", ""))
-                    px     = float((pv.text or "0").replace(",", "")) if pv is not None else 0.0
-                except ValueError:
-                    continue
-                if shares <= 0:
-                    continue
-                if px <= 0 and current_price > 0:
-                    px = current_price
-                if px <= 0:
-                    continue
-                total_dollars += shares * px
-                total_shares  += shares
-                price_sum     += px
-                price_count   += 1
-
-            result["dollars"]   = total_dollars
-            result["shares"]    = total_shares
-            result["avg_price"] = price_sum / price_count if price_count > 0 else 0.0
-            return result
-
-        except Exception:
-            pass  # lxml failed, fall through to regex
-
-    # ── regex fallback ────────────────────────────────────────
+    # ── Extract issuer info (ticker lives right here in the XML) ──
     # This is the key fix: no CIK-to-ticker lookup needed at all.
     t_match = re.search(r'<issuerTradingSymbol>\s*([A-Z.\-]{1,10})\s*</issuerTradingSymbol>',
                         xml_text, re.IGNORECASE)
@@ -531,9 +376,14 @@ def parse_form4_xml(xml_text: str, current_price: float = 0.0) -> dict:
     if n_match:
         result["issuer_name"] = n_match.group(1).strip()
 
+    if not xml_text:
+        return result
+
+    # ── Extract officer title ──────────────────────────────
     titles = re.findall(r'<officerTitle>\s*(.*?)\s*</officerTitle>', xml_text, re.IGNORECASE)
     result["raw_titles"] = [t.strip() for t in titles if t.strip()]
 
+    # Best title = first non-empty one
     best_title = ""
     for t in result["raw_titles"]:
         if len(t) > len(best_title):
@@ -541,10 +391,20 @@ def parse_form4_xml(xml_text: str, current_price: float = 0.0) -> dict:
     result["officer_title"] = best_title
 
     tl = best_title.lower()
-    result["is_officer"]       = any(kw in tl for kw in officer_keywords)
-    result["is_director_only"] = (not result["is_officer"]) and any(kw in tl for kw in director_keywords)
+    officer_keywords = ["chief executive","ceo","co-ceo","chief financial","cfo",
+                        "chief operating","coo","president","chief","vp","vice president",
+                        "svp","evp","general counsel","principal","secretary","treasurer"]
+    director_keywords = ["director","trustee","board member"]
 
+    is_officer   = any(kw in tl for kw in officer_keywords)
+    is_dir_only  = (not is_officer) and any(kw in tl for kw in director_keywords)
+
+    result["is_officer"]       = is_officer
+    result["is_director_only"] = is_dir_only
+
+    # ── Parse each nonDerivativeTransaction block ──────────
     # CRITICAL: P-code and A-code MUST be in the same block.
+    # We never check them across different blocks.
     blocks = re.findall(
         r'<nonDerivativeTransaction>(.*?)</nonDerivativeTransaction>',
         xml_text, re.DOTALL
@@ -556,33 +416,63 @@ def parse_form4_xml(xml_text: str, current_price: float = 0.0) -> dict:
     price_count   = 0
 
     for block in blocks:
+        # Extract transaction code from THIS block
         tc_match = re.search(r'<transactionCode>\s*([A-Za-z])\s*</transactionCode>', block)
-        if not tc_match or tc_match.group(1).strip().upper() != 'P':
+        if not tc_match:
             continue
-        ad_match = re.search(r'<transactionAcquiredDisposedCode>\s*<value>([AD])</value>', block)
-        if not ad_match or ad_match.group(1).strip().upper() != 'A':
+        txn_code = tc_match.group(1).strip().upper()
+
+        # MUST be 'P' — open-market purchase with own cash
+        if txn_code != 'P':
             continue
-        shares_match = re.search(r'<transactionShares>\s*<value>([\d,\.]+)</value>', block)
+
+        # Extract acquired/disposed code from THIS block
+        ad_match = re.search(
+            r'<transactionAcquiredDisposedCode>\s*<value>([AD])</value>', block
+        )
+        if not ad_match:
+            continue
+        ad_code = ad_match.group(1).strip().upper()
+
+        # MUST be 'A' — acquiring, not disposing
+        if ad_code != 'A':
+            continue
+
+        # Extract shares
+        shares_match = re.search(
+            r'<transactionShares>\s*<value>([\d,\.]+)</value>', block
+        )
         if not shares_match:
             continue
+
         try:
             shares = float(shares_match.group(1).replace(',', ''))
         except ValueError:
             continue
+
         if shares <= 0:
             continue
-        price_match = re.search(r'<transactionPricePerShare>\s*<value>([\d,\.]+)</value>', block)
+
+        # Extract price per share
+        price_match = re.search(
+            r'<transactionPricePerShare>\s*<value>([\d,\.]+)</value>', block
+        )
         px = 0.0
         if price_match:
             try:
                 px = float(price_match.group(1).replace(',', ''))
             except ValueError:
                 px = 0.0
+
+        # Use actual transaction price if available, else current price as estimate
         if px <= 0 and current_price > 0:
             px = current_price
+
         if px <= 0:
             continue
-        total_dollars += shares * px
+
+        dollar_value = shares * px
+        total_dollars += dollar_value
         total_shares  += shares
         price_sum     += px
         price_count   += 1
@@ -590,6 +480,7 @@ def parse_form4_xml(xml_text: str, current_price: float = 0.0) -> dict:
     result["dollars"]   = total_dollars
     result["shares"]    = total_shares
     result["avg_price"] = price_sum / price_count if price_count > 0 else 0.0
+
     return result
 
 
@@ -638,12 +529,7 @@ def fetch_form4_xml(cik: str, accession: str) -> Optional[str]:
         # Find the .xml file linked in the index — there should be exactly one
         # Form 4 XML file. It will have "ownershipDocument" as its description.
         # Pattern: any .xml link in the index
-        if BS4_AVAILABLE:
-            soup = parse_html(r_idx.text)
-            xml_links = [a["href"] for a in soup.find_all("a", href=True)
-                         if a["href"].lower().endswith(".xml")]
-        else:
-            xml_links = re.findall(r'href="([^"]*\.xml)"', r_idx.text, re.IGNORECASE)
+        xml_links = re.findall(r'href="([^"]*\.xml)"', r_idx.text, re.IGNORECASE)
         for xml_rel in xml_links:
             # Skip XSLT stylesheet links (they won't have ownershipDocument)
             if 'xsl' in xml_rel.lower() and 'form4' not in xml_rel.lower():
@@ -720,13 +606,7 @@ def _parse_atom_entries(atom_text: str) -> List[dict]:
     # Strip HTML entities
     text = atom_text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
 
-    if BS4_AVAILABLE:
-        soup = parse_html(text)
-        block_texts = [str(e) for e in soup.find_all("entry")]
-    else:
-        block_texts = re.findall(r'<entry>(.*?)</entry>', text, re.DOTALL)
-
-    for block in block_texts:
+    for block in re.findall(r'<entry>(.*?)</entry>', text, re.DOTALL):
         # ── Form type gate: only real Form 4s ──────────────────
         # Extract title and check it starts with "4 -" or "4-" exactly
         raw_title_m = re.search(r'<title[^>]*>(.*?)</title>', block, re.IGNORECASE | re.DOTALL)
@@ -1017,7 +897,7 @@ def find_whale_buys(days_back: int = 7) -> List[WhaleSignal]:
     skip_not_p     = 0
     skip_junk      = 0
 
-    for i, filing in enumerate(progress(raw_filings, desc="Parsing Form 4s")):
+    for i, filing in enumerate(raw_filings):
         acc  = filing.get("accession", "")
         cik  = filing.get("cik", "")   # submitter CIK (may be reporting person, not issuer)
         name = filing.get("company_name", "")
@@ -1916,10 +1796,26 @@ def check_spy_200d_ma() -> tuple:
 # ══════════════════════════════════════════════════════════════
 
 def load_watchlist() -> dict:
-    if os.path.exists(WATCHLIST_FILE):
+    """
+    Load watchlist from disk. Auto-creates an empty file if it doesn't
+    exist — important for new GitHub clones where no watchlist.json ships.
+    """
+    if not os.path.exists(WATCHLIST_FILE):
+        log.info(f"  No watchlist found — creating empty watchlist at {WATCHLIST_FILE}")
+        save_watchlist({})
+        return {}
+    try:
         with open(WATCHLIST_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+            data = json.load(f)
+        if not isinstance(data, dict):
+            log.warning("  Watchlist file corrupt — resetting to empty")
+            save_watchlist({})
+            return {}
+        return data
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(f"  Watchlist load error ({e}) — resetting to empty")
+        save_watchlist({})
+        return {}
 
 def save_watchlist(wl: dict):
     with open(WATCHLIST_FILE, "w", encoding="utf-8") as f:
@@ -2232,339 +2128,330 @@ def send_email(report: str, n_a: int, n_blo: int):
 
 def clean_watchlist(wl: dict) -> dict:
     """
-    Remove junk entries from watchlist — OTC foreign stocks that
-    slipped through before the pre-filter was improved.
-    Also removes entries older than 90 days with no whale ever.
+    Remove junk entries from watchlist on every startup.
+    Runs before any scanning so the watchlist stays clean for all users.
+
+    Removal rules:
+    1. Name is all digits (e.g. CET showing as "11017" — data error)
+    2. Name contains "(name N/A)" or "(name unavailable)" with no PEG
+    3. Ticker ends in F with 5 chars (OTC foreign ADR)
+    4. Ticker fails ticker_is_scannable() — warrant/unit/rights/OTC
+    5. Entry has no track field (leftover from old version)
+    6. Stale: on watchlist >90 days with track=B and never got a whale
     """
     to_remove = []
     cutoff_days = 90
     today = datetime.now()
 
     for ticker, info in wl.items():
-        # Remove OTC foreign (ends in F, more than 3 chars)
-        if len(ticker) >= 4 and ticker.endswith("F") and ticker[:-1].isalpha():
-            to_remove.append(ticker); continue
-        # Remove if name is "unavailable" and no PEG ever recorded
-        if "(name unavailable)" in info.get("name", "") and not info.get("last_peg"):
-            to_remove.append(ticker); continue
-        # Remove stale entries with no whale signal after 90 days
+        name  = info.get("name", "")
+        track = info.get("track", "")
+
+        # Rule 1: Name is all digits — yfinance returned a CIK/number instead of a company name
+        if name.strip().isdigit():
+            to_remove.append((ticker, f"name is a number ({name})")); continue
+
+        # Rule 2: Name explicitly unavailable and no PEG data ever recorded
+        if any(x in name for x in ["(name N/A)", "(name unavailable)"]) and not info.get("last_peg"):
+            to_remove.append((ticker, "name unavailable + no PEG")); continue
+
+        # Rule 3: OTC foreign (5-char ticker ending in F)
+        if len(ticker) == 5 and ticker.endswith("F") and ticker[:4].isalpha():
+            to_remove.append((ticker, "OTC foreign ADR")); continue
+
+        # Rule 4: Fails scannable check (warrant/unit/rights/digit/too-long)
+        if not ticker_is_scannable(ticker):
+            to_remove.append((ticker, "failed ticker_is_scannable")); continue
+
+        # Rule 5: No track field = leftover from old code version
+        if not track:
+            to_remove.append((ticker, "no track field (old version entry)")); continue
+
+        # Rule 6: Stale Track B — on list > 90 days, no whale ever
         first = info.get("first_seen", "")
-        if first:
+        if first and track == "B":
             try:
                 age = (today - datetime.strptime(first, "%Y-%m-%d")).days
-                if age > cutoff_days and info.get("track") in ("B", "") :
-                    to_remove.append(ticker)
+                if age > cutoff_days:
+                    to_remove.append((ticker, f"stale ({age}d on Track B, no whale)"))
             except ValueError:
                 pass
 
-    for t in to_remove:
-        del wl[t]
-        log.info(f"  Watchlist cleanup: removed {t}")
+    for ticker, reason in to_remove:
+        if ticker in wl:
+            del wl[ticker]
+            log.info(f"  Watchlist cleanup: removed {ticker} — {reason}")
 
     return wl
 
 
 def main():
-    try:
-        print("\n╔" + "═"*64 + "╗")
-        print("║   PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER")
-        print(f"║   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("║   EDGAR atom feed → XML parse → quality filter")
-        print("╚" + "═"*64 + "╝\n")
+    print("\n╔" + "═"*64 + "╗")
+    print("║   PROJECT LEVIATHAN v8.1 — WHALE-FIRST SCANNER")
+    print(f"║   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("║   EDGAR atom feed → XML parse → quality filter")
+    print("╚" + "═"*64 + "╝\n")
 
-        #email test
-        global SEC_EMAIL, USER_AGENT, EMAIL_ENABLED, EMAIL_FROM, EMAIL_TO, EMAIL_APP_PASS
+    watchlist = load_watchlist()
+    watchlist = clean_watchlist(watchlist)
+    log.info(f"Watchlist loaded: {len(watchlist)} stocks (after cleanup)")
 
-        cfg = load_config()
-        SEC_EMAIL     = cfg["sec_email"]
-        USER_AGENT    = f"LeviathanScout/8.0 {SEC_EMAIL}"
-        EMAIL_FROM    = cfg["sec_email"]          # send from same address
-        EMAIL_TO      = cfg.get("report_email", "")
-        EMAIL_APP_PASS = cfg.get("report_app_pass", "")
-        EMAIL_ENABLED  = cfg.get("email_enabled", False)
+    # ── Step 1: SPY macro gate ─────────────────────────────
+    log.info("Step 1: SPY 200-day MA check...")
+    spy_above, spy_price, sma200, spy_pct = check_spy_200d_ma()
+    if spy_price and sma200:
+        status = "ABOVE" if spy_above else "BELOW"
+        log.info(f"  SPY ${spy_price:.2f} is {status} 200d MA (${sma200:.2f}, {spy_pct:+.1f}%)")
+        if not spy_above:
+            log.warning("  *** SPY BELOW 200d MA — hedge mode. No new entries. ***")
 
-        watchlist = load_watchlist()
-        watchlist = clean_watchlist(watchlist)
-        log.info(f"Watchlist loaded: {len(watchlist)} stocks (after cleanup)")
+    # ── Step 2: Find whale buys from EDGAR ─────────────────
+    log.info("Step 2: Scanning EDGAR Form 4 filings for whale buys...")
+    whale_signals, total_filings_parsed = find_whale_buys(days_back=WHALE_DAYS)
 
-        overall = tqdm(total=6, desc="Overall progress", unit="step", position=0,
-                    leave=True, ncols=80, dynamic_ncols=False) if TQDM_AVAILABLE else None
+    if not whale_signals:
+        log.warning("  No whale signals found. Check internet + SEC EDGAR availability.")
+        log.warning("  Running in watchlist-only mode.")
 
-        def step_done(label=""):
-            if overall:
-                if label:
-                    overall.set_postfix_str(label)
-                overall.update(1)
+    # ── Step 3: For each whale, fetch fundamentals ─────────
+    log.info(f"Step 3: Fetching fundamentals for {len(whale_signals)} whale companies...")
 
-        # ── Step 1: SPY macro gate ─────────────────────────────
-        log.info("Step 1: SPY 200-day MA check...")
-        spy_above, spy_price, sma200, spy_pct = check_spy_200d_ma()
-        if spy_price and sma200:
-            status = "ABOVE" if spy_above else "BELOW"
-            log.info(f"  SPY ${spy_price:.2f} is {status} 200d MA (${sma200:.2f}, {spy_pct:+.1f}%)")
-            if not spy_above:
-                log.warning("  *** SPY BELOW 200d MA — hedge mode. No new entries. ***")
-        step_done("SPY check")
+    track_a:    List[StockResult] = []
+    track_b_lo: List[StockResult] = []
+    track_ktos: List[StockResult] = []
+    track_warn: List[StockResult] = []
 
-        # ── Step 2: Find whale buys from EDGAR ─────────────────
-        log.info("Step 2: Scanning EDGAR Form 4 filings for whale buys...")
-        whale_signals, total_filings_parsed = find_whale_buys(days_back=WHALE_DAYS)
-        step_done("EDGAR scan")
+    # Also track non-whale stocks for Track B (from watchlist + universe spot-check)
+    track_b:    List[StockResult] = []
 
-        if not whale_signals:
-            log.warning("  No whale signals found. Check internet + SEC EDGAR availability.")
-            log.warning("  Running in watchlist-only mode.")
+    all_stocks_by_sector: dict = {}   # for sector momentum
 
-        # ── Step 3: For each whale, fetch fundamentals ─────────
-        log.info(f"Step 3: Fetching fundamentals for {len(whale_signals)} whale companies...")
+    processed = 0
+    for whale in whale_signals:
+        ticker = whale.ticker
 
-        track_a:    List[StockResult] = []
-        track_b_lo: List[StockResult] = []
-        track_ktos: List[StockResult] = []
-        track_warn: List[StockResult] = []
+        if not ticker_is_scannable(ticker):
+            log.debug(f"  {ticker}: pre-filtered (warrant/unit/OTC)")
+            continue
 
-        # Also track non-whale stocks for Track B (from watchlist + universe spot-check)
-        track_b:    List[StockResult] = []
+        log.info(f"  Analyzing {ticker} (${whale.dollar_amount/1e6:.1f}M buy, {whale.officer_title[:30]})")
 
-        all_stocks_by_sector: dict = {}   # for sector momentum
+        s, reject = get_fundamentals(ticker, whale=whale)
+        time.sleep(BASE_DELAY)
 
-        processed = 0
-        for whale in progress(whale_signals, desc="Fetching fundamentals"):
-            ticker = whale.ticker
+        if s is None:
+            log.info(f"    Skipped: {reject}")
+            continue
 
-            if not ticker_is_scannable(ticker):
-                log.debug(f"  {ticker}: pre-filtered (warrant/unit/OTC)")
-                continue
+        processed += 1
 
-            log.info(f"  Analyzing {ticker} (${whale.dollar_amount/1e6:.1f}M buy, {whale.officer_title[:30]})")
+        enrich_from_watchlist(watchlist, s)
 
-            s, reject = get_fundamentals(ticker, whale=whale)
-            time.sleep(BASE_DELAY)
+        # Check insider sells
+        s.sell_count, s.has_sells = check_insider_sells(whale.cik)
+        if s.has_sells:
+            log.info(f"    {ticker}: {s.sell_count} sell filings detected")
 
-            if s is None:
-                log.info(f"    Skipped: {reject}")
-                continue
+        # Run flag checks
+        run_flag_checks(ticker, s)
+        time.sleep(0.3)
 
-            processed += 1
+        # Hard exclude on heavy red flags (SPAC/fund/China already caught in get_fundamentals)
+        if s.red_score >= 15:
+            log.info(f"    {ticker}: excluded — red score {s.red_score}")
+            continue
 
-            enrich_from_watchlist(watchlist, s)
+        # Compute scores
+        s.conviction_score = compute_conviction(s)
 
-            # Check insider sells
-            s.sell_count, s.has_sells = check_insider_sells(whale.cik)
-            if s.has_sells:
-                log.info(f"    {ticker}: {s.sell_count} sell filings detected")
+        # ── Assign track ──────────────────────────────────────
+        tight_ok, tight_reason = passes_tight_filters(s)
+        loose_ok, loose_reason = passes_loose_filters(s)
 
-            # Run flag checks
-            run_flag_checks(ticker, s)
-            time.sleep(0.3)
+        # Heavy selling → Watch Out regardless
+        if s.sell_count >= 5 and s.has_sells:
+            s.track = "WARN"
+            s.potential_score, s.potential_label = compute_potential(s)
+            s.rank_score = compute_rank_score(s)
+            track_warn.append(s)
+            log.info(f"    {ticker}: WARN — {s.sell_count} sell filings")
+            continue
 
-            # Hard exclude on heavy red flags (SPAC/fund/China already caught in get_fundamentals)
-            if s.red_score >= 15:
-                log.info(f"    {ticker}: excluded — red score {s.red_score}")
-                continue
+        # Dollar threshold checks
+        dollar = whale.cluster_total_usd if whale.is_cluster else whale.dollar_amount
 
-            # Compute scores
-            s.conviction_score = compute_conviction(s)
-
-            # ── Assign track ──────────────────────────────────────
-            tight_ok, tight_reason = passes_tight_filters(s)
-            loose_ok, loose_reason = passes_loose_filters(s)
-
-            # Heavy selling → Watch Out regardless
-            if s.sell_count >= 5 and s.has_sells:
-                s.track = "WARN"
+        if tight_ok:
+            if dollar >= WHALE_TRACK_A_DOLLARS and s.conviction_score >= MIN_CONVICTION_TRACK_A:
+                s.track = "A"
                 s.potential_score, s.potential_label = compute_potential(s)
                 s.rank_score = compute_rank_score(s)
-                track_warn.append(s)
-                log.info(f"    {ticker}: WARN — {s.sell_count} sell filings")
-                continue
-
-            # Dollar threshold checks
-            dollar = whale.cluster_total_usd if whale.is_cluster else whale.dollar_amount
-
-            if tight_ok:
-                if dollar >= WHALE_TRACK_A_DOLLARS and s.conviction_score >= MIN_CONVICTION_TRACK_A:
-                    s.track = "A"
-                    s.potential_score, s.potential_label = compute_potential(s)
-                    s.rank_score = compute_rank_score(s)
-                    track_a.append(s)
-                    update_watchlist(watchlist, s)
-                    log.info(f"    {ticker}: TRACK A  (score {s.conviction_score}, ${dollar/1e6:.0f}M)")
-                else:
-                    # Good company, whale buy but < $10M or conviction < 7 → Track B-
-                    s.track = "B-"
-                    s.ktos_fail_reason = f"whale ${dollar/1e6:.1f}M < $10M threshold or conviction {s.conviction_score} < 7"
-                    s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
-                    s.rank_score = compute_rank_score(s)
-                    track_b_lo.append(s)
-                    update_watchlist(watchlist, s)
-                    log.info(f"    {ticker}: TRACK B-  (tight ok, dollar/conviction threshold)")
-
-            elif loose_ok:
+                track_a.append(s)
+                update_watchlist(watchlist, s)
+                log.info(f"    {ticker}: TRACK A  (score {s.conviction_score}, ${dollar/1e6:.0f}M)")
+            else:
+                # Good company, whale buy but < $10M or conviction < 7 → Track B-
                 s.track = "B-"
-                s.ktos_fail_reason = tight_reason
+                s.ktos_fail_reason = f"whale ${dollar/1e6:.1f}M < $10M threshold or conviction {s.conviction_score} < 7"
                 s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
                 s.rank_score = compute_rank_score(s)
                 track_b_lo.append(s)
                 update_watchlist(watchlist, s)
-                log.info(f"    {ticker}: TRACK B-  ({tight_reason})")
+                log.info(f"    {ticker}: TRACK B-  (tight ok, dollar/conviction threshold)")
 
-            else:
-                # Failed even loose filters → KTOS if sector is hot (we check later)
-                s.track = "KTOS"
-                s.ktos_fail_reason = f"tight: {tight_reason} | loose: {loose_reason}"
-                s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
-                s.rank_score = compute_rank_score(s)
-                track_ktos.append(s)
-                log.info(f"    {ticker}: KTOS candidate  ({tight_reason})")
+        elif loose_ok:
+            s.track = "B-"
+            s.ktos_fail_reason = tight_reason
+            s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
+            s.rank_score = compute_rank_score(s)
+            track_b_lo.append(s)
+            update_watchlist(watchlist, s)
+            log.info(f"    {ticker}: TRACK B-  ({tight_reason})")
 
-            # Track sector
-            if s.sector:
-                all_stocks_by_sector.setdefault(s.sector, []).append(s)
+        else:
+            # Failed even loose filters → KTOS if sector is hot (we check later)
+            s.track = "KTOS"
+            s.ktos_fail_reason = f"tight: {tight_reason} | loose: {loose_reason}"
+            s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
+            s.rank_score = compute_rank_score(s)
+            track_ktos.append(s)
+            log.info(f"    {ticker}: KTOS candidate  ({tight_reason})")
 
-        step_done("Fundamentals")
+        # Track sector
+        if s.sector:
+            all_stocks_by_sector.setdefault(s.sector, []).append(s)
 
-        # ── Step 4: Sector momentum → score KTOS plays ─────────
-        log.info("Step 4: Sector momentum analysis...")
-        sector_scores = measure_sector_momentum(all_stocks_by_sector)
-        hot_sectors   = set(list(sector_scores.keys())[:KTOS_TOP_SECTORS])
+    # ── Step 4: Sector momentum → score KTOS plays ─────────
+    log.info("Step 4: Sector momentum analysis...")
+    sector_scores = measure_sector_momentum(all_stocks_by_sector)
+    hot_sectors   = set(list(sector_scores.keys())[:KTOS_TOP_SECTORS])
 
-        # Assign sector momentum scores to KTOS plays + filter to hot sectors only
-        filtered_ktos = []
-        sector_ktos_count: dict = {}
-        for s in sorted(track_ktos, key=lambda x: x.rank_score, reverse=True):
-            if s.sector in sector_scores:
-                s.sector_momentum = sector_scores[s.sector]
-                s.sector_rank     = list(sector_scores.keys()).index(s.sector) + 1
-            count = sector_ktos_count.get(s.sector, 0)
-            if count < 3:  # max 3 per sector
-                filtered_ktos.append(s)
-                sector_ktos_count[s.sector] = count + 1
-        track_ktos = filtered_ktos[:10]
-        step_done("Sector momentum")
+    # Assign sector momentum scores to KTOS plays + filter to hot sectors only
+    filtered_ktos = []
+    sector_ktos_count: dict = {}
+    for s in sorted(track_ktos, key=lambda x: x.rank_score, reverse=True):
+        if s.sector in sector_scores:
+            s.sector_momentum = sector_scores[s.sector]
+            s.sector_rank     = list(sector_scores.keys()).index(s.sector) + 1
+        count = sector_ktos_count.get(s.sector, 0)
+        if count < 3:  # max 3 per sector
+            filtered_ktos.append(s)
+            sector_ktos_count[s.sector] = count + 1
+    track_ktos = filtered_ktos[:10]
 
-        # ── Step 5: Track B universe scan ─────────────────────────
-        # Scan a curated universe of real small/mid-cap stocks for Track B.
-        # This runs independently of the whale scan — it finds companies
-        # that pass all tight filters and puts them on watch for a whale.
-        # Without this, Track B only contains the 4-stock watchlist.
-        log.info("Step 5: Track B universe scan...")
+    # ── Step 5: Track B universe scan ─────────────────────────
+    # Scan a curated universe of real small/mid-cap stocks for Track B.
+    # This runs independently of the whale scan — it finds companies
+    # that pass all tight filters and puts them on watch for a whale.
+    # Without this, Track B only contains the 4-stock watchlist.
+    log.info("Step 5: Track B universe scan...")
 
-        # All stocks already found in whale scan
-        already_found = {s.ticker for s in track_a + track_b_lo + track_ktos + track_warn}
+    # All stocks already found in whale scan
+    already_found = {s.ticker for s in track_a + track_b_lo + track_ktos + track_warn}
 
-        # Curated universe: real small/mid-cap operating companies across all sectors
-        # Designed to match the Leviathan profile: $200M-$15B, high quality
-        TRACK_B_UNIVERSE = [
-            # Defense / Aerospace
-            "KTOS","LHX","MANT","CACI","SAIC","LDOS","AVAV","BWXT","HEICO",
-            "MRCY","DRS","MOOG","HXL","KAMN","PSN","TXT",
-            # Energy / Commodities
-            "MTDR","CIVI","NOG","SM","CEIX","ARCH","HCC","ARLP","REX","PARR",
-            "HPK","PTEN","RRC","GPOR","ESTE","CPE","VTLE","SWN","CHRD","MGY",
-            # Shipping
-            "SBLK","GOGL","NMM","GSL","HAFN","DAC","CMRE","STNG","INSW",
-            "TDW","EGLE","GNK","SALT",
-            # Industrials / Electrification
-            "POWL","XPEL","AAON","SSD","UFPI","DXPE","GHM","CECO","TRN",
-            "NVEE","MYRG","IIIN","AZZ","SXI","ARCB","EXPO","ICFI","HCKT",
-            # Software / Tech
-            "PCTY","SPSC","BLKB","UPLD","NCNO","ALRM","JAMF","APPF","QTWO",
-            "RAMP","BILL","TOST","PRGS","SCSC","MGRC","CEVA","RDVT",
-            # Insurance / Financial Quality
-            "KNSL","SIGI","MCY","RDN","NMIH","ORI","SKWD","HGTY","AMSF",
-            "FFIN","UVSP","FBIZ","LKFN","MBWM","CHCO","STBA","FULT","NBTB",
-            # Healthcare / Biotech
-            "ADUS","ENSG","GKOS","HRMY","SUPN","AMPH","ANIP","ATRC","CCRN",
-            "AXSM","PRDO","LOPE","STRA","BHVN","AUPH","ANIK","CNMD","PNTG",
-            # Consumer / Restaurants
-            "TXRH","WING","BOOT","SHOO","CBRL","EAT","FIZZ","LANC","JJSF",
-            "ASO","SCVL","JBSS","RCKY","OLLI","CATO",
-            # Mining / Metals
-            "PAAS","CDE","HL","WPM","KGC","BTG","RGLD","EGO","MAG","SAND",
-            # Additional high-quality small caps
-            "KFRC","FCN","EXLS","DORM","MMSI","KFY","HUBG","MATX","VMI",
-            "NFG","MKTX","PRI","TTEK","LRN","LOAR","TRUP","HQY","QRVO",
-            "APAM","VCTR","FHI","GAIN","GLAD","AMG","ARW",
-        ]
+    # Curated universe: real small/mid-cap operating companies across all sectors
+    # Designed to match the Leviathan profile: $200M-$15B, high quality
+    TRACK_B_UNIVERSE = [
+        # Defense / Aerospace
+        "KTOS","LHX","MANT","CACI","SAIC","LDOS","AVAV","BWXT","HEICO",
+        "MRCY","DRS","MOOG","HXL","KAMN","PSN","TXT",
+        # Energy / Commodities
+        "MTDR","CIVI","NOG","SM","CEIX","ARCH","HCC","ARLP","REX","PARR",
+        "HPK","PTEN","RRC","GPOR","ESTE","CPE","VTLE","SWN","CHRD","MGY",
+        # Shipping
+        "SBLK","GOGL","NMM","GSL","HAFN","DAC","CMRE","STNG","INSW",
+        "TDW","EGLE","GNK","SALT",
+        # Industrials / Electrification
+        "POWL","XPEL","AAON","SSD","UFPI","DXPE","GHM","CECO","TRN",
+        "NVEE","MYRG","IIIN","AZZ","SXI","ARCB","EXPO","ICFI","HCKT",
+        # Software / Tech
+        "PCTY","SPSC","BLKB","UPLD","NCNO","ALRM","JAMF","APPF","QTWO",
+        "RAMP","BILL","TOST","PRGS","SCSC","MGRC","CEVA","RDVT",
+        # Insurance / Financial Quality
+        "KNSL","SIGI","MCY","RDN","NMIH","ORI","SKWD","HGTY","AMSF",
+        "FFIN","UVSP","FBIZ","LKFN","MBWM","CHCO","STBA","FULT","NBTB",
+        # Healthcare / Biotech
+        "ADUS","ENSG","GKOS","HRMY","SUPN","AMPH","ANIP","ATRC","CCRN",
+        "AXSM","PRDO","LOPE","STRA","BHVN","AUPH","ANIK","CNMD","PNTG",
+        # Consumer / Restaurants
+        "TXRH","WING","BOOT","SHOO","CBRL","EAT","FIZZ","LANC","JJSF",
+        "ASO","SCVL","JBSS","RCKY","OLLI","CATO",
+        # Mining / Metals
+        "PAAS","CDE","HL","WPM","KGC","BTG","RGLD","EGO","MAG","SAND",
+        # Additional high-quality small caps
+        "KFRC","FCN","EXLS","DORM","MMSI","KFY","HUBG","MATX","VMI",
+        "NFG","MKTX","PRI","TTEK","LRN","LOAR","TRUP","HQY","QRVO",
+        "APAM","VCTR","FHI","GAIN","GLAD","AMG","ARW",
+    ]
 
-        # Remove already-found tickers, watchlist tickers (already scanned)
-        watchlist_tickers = list(watchlist.keys())
-        to_scan_b = [
-            t for t in TRACK_B_UNIVERSE
-            if t not in already_found and t not in watchlist_tickers
-        ]
-        # Add watchlist tickers not yet found
-        to_scan_b += [t for t in watchlist_tickers if t not in already_found]
+    # Remove already-found tickers, watchlist tickers (already scanned)
+    watchlist_tickers = list(watchlist.keys())
+    to_scan_b = [
+        t for t in TRACK_B_UNIVERSE
+        if t not in already_found and t not in watchlist_tickers
+    ]
+    # Add watchlist tickers not yet found
+    to_scan_b += [t for t in watchlist_tickers if t not in already_found]
 
-        log.info(f"  Universe scan: {len(to_scan_b)} tickers to check for Track B")
+    log.info(f"  Universe scan: {len(to_scan_b)} tickers to check for Track B")
 
-        for ticker in progress(to_scan_b, desc="Universe scan"):
-            if not ticker_is_scannable(ticker):
+    for ticker in to_scan_b:
+        if not ticker_is_scannable(ticker):
+            continue
+        try:
+            s, reject = get_fundamentals(ticker, whale=None)
+            time.sleep(BASE_DELAY)
+            if s is None:
                 continue
-            try:
-                s, reject = get_fundamentals(ticker, whale=None)
-                time.sleep(BASE_DELAY)
-                if s is None:
-                    continue
-                enrich_from_watchlist(watchlist, s)
-                run_flag_checks(ticker, s)
-                time.sleep(0.2)
-                if s.red_score >= 15:
-                    continue
-                tight_ok, reject_reason = passes_tight_filters(s)
-                if tight_ok:
-                    s.track = "B"
-                    s.conviction_score = 0
-                    s.potential_score, s.potential_label = compute_potential(s)
-                    s.rank_score = compute_rank_score(s)
-                    track_b.append(s)
-                    update_watchlist(watchlist, s)
-                    peg_s = f"{s.peg:.2f}" if s.peg else "N/A"
-                    gm_s  = f"{int((s.gross_margin or 0)*100)}%"
-                    rg_s  = f"{int((s.revenue_growth or 0)*100)}%"
-                    log.info(f"    {ticker}: TRACK B  (PEG={peg_s}, GM={gm_s}, RG={rg_s})")
-                else:
-                    log.debug(f"    {ticker}: failed — {reject_reason}")
-            except Exception as e:
-                log.debug(f"  Universe scan {ticker}: {e}")
+            enrich_from_watchlist(watchlist, s)
+            run_flag_checks(ticker, s)
+            time.sleep(0.2)
+            if s.red_score >= 15:
+                continue
+            tight_ok, reject_reason = passes_tight_filters(s)
+            if tight_ok:
+                s.track = "B"
+                s.conviction_score = 0
+                s.potential_score, s.potential_label = compute_potential(s)
+                s.rank_score = compute_rank_score(s)
+                track_b.append(s)
+                update_watchlist(watchlist, s)
+                peg_s = f"{s.peg:.2f}" if s.peg else "N/A"
+                gm_s  = f"{int((s.gross_margin or 0)*100)}%"
+                rg_s  = f"{int((s.revenue_growth or 0)*100)}%"
+                log.info(f"    {ticker}: TRACK B  (PEG={peg_s}, GM={gm_s}, RG={rg_s})")
+            else:
+                log.debug(f"    {ticker}: failed — {reject_reason}")
+        except Exception as e:
+            log.debug(f"  Universe scan {ticker}: {e}")
 
-        save_watchlist(watchlist)
-        step_done("Universe scan")
+    save_watchlist(watchlist)
 
-        # ── Step 6: Build and save report ─────────────────────
-        log.info("Step 6: Building report...")
-        report = build_report(
-            track_a, track_b, track_b_lo, track_ktos, track_warn,
-            watchlist, spy_above, spy_price, sma200, spy_pct,
-            total_whales=len(whale_signals), total_parsed=total_filings_parsed,
-        )
-        step_done("Report built")
-        if overall:
-            overall.close()
+    # ── Step 6: Build and save report ─────────────────────
+    log.info("Step 6: Building report...")
+    report = build_report(
+        track_a, track_b, track_b_lo, track_ktos, track_warn,
+        watchlist, spy_above, spy_price, sma200, spy_pct,
+        total_whales=len(whale_signals), total_parsed=total_filings_parsed,
+    )
 
-        print("\n\n" + report)
+    print("\n\n" + report)
 
-        rpath = os.path.join(_DIR, f"leviathan_report_{datetime.now().strftime('%Y-%m-%d_%H%M')}.txt")
-        with open(rpath, "w", encoding="utf-8") as f:
-            f.write(report)
+    rpath = os.path.join(_DIR, f"leviathan_report_{datetime.now().strftime('%Y-%m-%d_%H%M')}.txt")
+    with open(rpath, "w", encoding="utf-8") as f:
+        f.write(report)
 
-        send_email(report, len(track_a), len(track_b_lo))
+    send_email(report, len(track_a), len(track_b_lo))
 
-        print(f"\n  Report saved : {rpath}")
-        print(f"  Form 4s parsed : {total_filings_parsed}")
-        print(f"  Whale signals  : {len(whale_signals)}")
-        print(f"  Track A        : {len(track_a)}")
-        print(f"  Track B        : {len(track_b)}")
-        print(f"  Track B-       : {len(track_b_lo)}")
-        print(f"  KTOS           : {len(track_ktos)}")
-        print(f"  Watchlist      : {len(watchlist)}")
-        print("\n" + "═"*68 + "\n")
-    except KeyboardInterrupt:
-        if overall:
-            overall.close()
-        print("\n\n  ⚠  Scan interrupted by user. Goodbye.\n")
-        sys.exit(0)
+    print(f"\n  Report saved : {rpath}")
+    print(f"  Form 4s parsed : {total_filings_parsed}")
+    print(f"  Whale signals  : {len(whale_signals)}")
+    print(f"  Track A        : {len(track_a)}")
+    print(f"  Track B        : {len(track_b)}")
+    print(f"  Track B-       : {len(track_b_lo)}")
+    print(f"  KTOS           : {len(track_ktos)}")
+    print(f"  Watchlist      : {len(watchlist)}")
+    print("\n" + "═"*68 + "\n")
+
 
 if __name__ == "__main__":
     main()
