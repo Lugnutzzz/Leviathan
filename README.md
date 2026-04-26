@@ -16,13 +16,13 @@ This version focuses on whale‑first detection, optimized EDGAR parsing, and a 
 
 ## Features
 
-- SPY 200‑day MA check
+SPY 200‑day MA check
   
-Stops new entries during bear regimes.
+- Stops new entries during bear regimes.
 
-- EDGAR Form 4 scanning
+EDGAR Form 4 scanning
   
-Atom feed (Tier 1), 
+- Atom feed (Tier 1), 
 EFTS search (Tier 2), 
 XML parsing, 
 Officer‑only filtering, 
@@ -30,13 +30,13 @@ Purchase‑only filtering,
 Whale detection, 
 Flags large insider buys (high conviction).
 
-- Fundamental filters
+Fundamental filters
   
-PEG, D/E, margins, growth, insider ownership.
+- PEG, D/E, margins, growth, insider ownership.
 
-- Clean ticker universe
+Clean ticker universe
   
-Removes:
+- Removes:
 Warrants (W), 
 Units (U), 
 Rights (R), 
