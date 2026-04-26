@@ -2427,6 +2427,7 @@ def main():
                 s.potential_score, s.potential_label = compute_potential(s, is_loose=True)
                 s.rank_score = compute_rank_score(s)
                 track_ktos.append(s)
+                update_watchlist(watchlist, s)
                 log.info(f"    {ticker}: KTOS candidate  ({tight_reason})")
 
             # Track sector
@@ -2450,6 +2451,7 @@ def main():
             count = sector_ktos_count.get(s.sector, 0)
             if count < 3:  # max 3 per sector
                 filtered_ktos.append(s)
+                update_watchlist(watchlist, s)
                 sector_ktos_count[s.sector] = count + 1
         track_ktos = filtered_ktos[:10]
         step_done("Sector momentum")
